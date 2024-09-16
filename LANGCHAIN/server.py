@@ -9,11 +9,25 @@ import os
 
 from key_reader import langchain_key, tavily_key, openai_key
 
-os.environ['LANGCHAIN_TRACING_V2'] = 'true'
-os.environ['LANGCHAIN_ENDPOINT'] = 'https://api.smith.langchain.com'
-os.environ['LANGCHAIN_API_KEY'] = langchain_key
-os.environ['TAVILY_API_KEY'] = tavily_key
-os.environ['OPENAI_API_KEY'] = openai_key
+"""
+
+This scripts builds a Chain of  
+
+    - a simple ChatPromptTemplate
+    - the OpenAI Model
+    - an StringOutputParser
+
+
+Then it builds a Web Server where the Chain is executed by sending a POST method 
+Access the webserver under localhost:8000
+
+
+It is not a Chatbot (using historic Q&A)
+It is not using 
+    - external Sources
+    - Tools ()
+
+"""
 
 
 # 1. Create prompt template
