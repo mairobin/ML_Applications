@@ -32,31 +32,43 @@ OLD:
     )
 """
 
+def to_splits(loader):
+    docs = loader.load()
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=1000, chunk_overlap=200, add_start_index=True
+    )
+    all_splits = text_splitter.split_documents(docs)
+    return all_splits
+
 loader = WebBaseLoader("https://www.futurebrains.io/team/nicolas-a-durr")
+all_splits = to_splits(loader)
+print(f"Website Chunks: {len(all_splits)}")
 
-docs = loader.load()
+# Initialize an empty vector store
+vectorstore = Chroma(collection_name="robins_collection", embedding_function=OpenAIEmbeddings())
+vectorstore.add_documents(documents=all_splits)
 
-#file_path = "langchain_keys.txt"
-#loader = TextLoader(file_path)
-#docs = loader.load()
+loader = TextLoader("nick.txt")
+all_splits = to_splits(loader)
+print(f"Nick Text Chunks: {len(all_splits)}")
+vectorstore.add_documents(documents=all_splits)
 
-text_splitter = RecursiveCharacterTextSplitter(
-    chunk_size=1000, chunk_overlap=200, add_start_index=True
-)
+loader = TextLoader("robin.txt")
+all_splits = to_splits(loader)
+print(f"Robin Text Chunks: {len(all_splits)}")
+vectorstore.add_documents(documents=all_splits)
 
-all_splits = text_splitter.split_documents(docs)
-print(f"Chunks: {len(all_splits)}")
 
-vectorstore = Chroma.from_documents(documents=all_splits, embedding=OpenAIEmbeddings())
-retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
+retriever = vectorstore.as_retriever(search_kwargs={"k": 6})
 llm = ChatOpenAI(model="gpt-4o-mini")
 
 system_prompt = (
-    "You are an german assistant for question-answering tasks. "
+    "You are an assistant for question-answering tasks. "
     "Use the following pieces of retrieved context to answer "
     "the question. If you don't know the answer, say that you "
     "don't know. Use three sentences maximum and keep the "
     "answer concise."
+    "answer in german"
     "\n\n"
     "{context}"
 )
@@ -74,11 +86,12 @@ question_answer_chain = create_stuff_documents_chain(llm, prompt)
 # adds the retrieval step and propagates the retrieved context through the chain
 rag_chain = create_retrieval_chain(retriever, question_answer_chain)
 
-response = rag_chain.invoke({"input": "Who is Nicolas Dürr?"})
+response = rag_chain.invoke({"input": "How could Nicolas Robin and Nick work together?"})
 
 # response["answer"]: Plain answer
 print(f"Answer: {response['answer']}")
 
+print("\nSources of the Answer:")
 # response["context"]: List of Source documents
 for i, document in enumerate(response["context"]):
     print(f"{i+1}. Source: {document}")
